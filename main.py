@@ -53,9 +53,9 @@ def PreProcess():
     for i in range(1, 1000):
         a = f"file{i}.txt"
         f = open(f"./text_files/{a}", "r").read()
+        if(i <= 5): print(f"\n[Test Case {i}]")
         res = Preprocessing(f, (i <= 5))
         if i <= 5:
-            print(f"\n[Test Case {i}]")
             print("------------------Before Preprocessing-----------------\n")
             print(f)
             print("\n------------------After Preprocessing------------------\n")
@@ -180,7 +180,7 @@ def ANDNOT(docs1, docs2):
 def ORNOT(docs1, docs2):
     return OR(docs1, NOT(docs2))
 
-def Query(InputSeq, ops, table):
+def QueryInv(InputSeq, ops, table):
     tokens = Preprocessing(InputSeq, 0)
     X = ""
     for i in range(len(ops)):
@@ -210,14 +210,26 @@ def Query(InputSeq, ops, table):
 
     return X, last
 
-def Common(tkn1, tkn2):
+def Last(word, position, doc, table):
+    if word == None:
+        return True
+    
+    for dc in table[word]:
+        if (dc[0] == doc):
+            if position in dc[1]:
+                return True
+
+    return False
+
+def Common(tkn1, tkn2, prevword, table):
+    print(prevword)
     i, j = 0, 0
     res = []
     while((i < len(tkn1)) and (j < len(tkn2))):
         if(tkn1[i][0] == tkn2[j][0]):
             p, q = 0, 0
             while (p < len(tkn1[i][1]) and q < len(tkn2[j][1])):
-                if(1 + tkn1[i][1][p] == tkn2[j][1][q]):
+                if(1 + tkn1[i][1][p] == tkn2[j][1][q] and Last(prevword, tkn1[i][1][p] - 1, tkn1[i][0], table)):
                     res.append(tkn1[i][0])
                     p += 1
                     q += 1
@@ -247,7 +259,8 @@ def Query(PhraseQue, table):
     tkn1 = helper(tokens[0], table)
     for idx in range(1, len(tokens)):
         tkn2 = helper(tokens[idx], table)
-        res = AND(res, Common(tkn1, tkn2))
+        if(idx == 1): res = AND(res, Common(tkn1, tkn2, None, table))
+        else: res = AND(res, Common(tkn1, tkn2, tokens[idx - 2], table))
         tkn1 = tkn2
 
     return res
@@ -265,7 +278,7 @@ def Boolean(table):
         ops = input("Enter Operations: ").split(',')
         for op in range(len(ops)):
             ops[op] = ops[op].lstrip().rstrip()
-        X, docs = Query(InputSeq, ops, table)
+        X, docs = QueryInv(InputSeq, ops, table)
         print(f"Query {query + 1}: " + X)
         print(f"Number of documents retrieved for query {query}: {len(docs)}")
         print(f"Names of the documents retrieved for query {query}: {Output(docs)}")
